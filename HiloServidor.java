@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import javax.swing.JOptionPane;
 
@@ -28,6 +29,8 @@ public class HiloServidor implements Runnable{
     //Lista de los usuarios conectados al servidor
     private LinkedList<Socket> usuariosSocket = new LinkedList<Socket>();
     private static ArrayList<String> users = new ArrayList<String>();
+    
+    private HashMap<String,Socket> user_socket=new HashMap<String,Socket>();
     
     private static final String ruta="C:\\Users\\troya\\Documents\\";
 	public Object salida;
@@ -57,7 +60,17 @@ public class HiloServidor implements Runnable{
             
             String nick=in.readUTF();
             users.add(nick);
-                      
+            user_socket.put(nick, socket);    
+            
+            
+            
+            for(Socket s:user_socket.values()){
+            	System.out.println(s.toString());
+            }
+            for(String u:user_socket.keySet()){
+            	System.out.println(u);
+            }
+            
             
             
             for (int i = 0; i < usuariosSocket.size(); i++) {
@@ -73,7 +86,7 @@ public class HiloServidor implements Runnable{
             
             while(true){
             	int num=in.readInt();
-            	System.out.println(num);
+            	
             	switch (num) {
             	
 				case 100:
@@ -88,56 +101,70 @@ public class HiloServidor implements Runnable{
 					break;
 					
 				case 200: //Recibe el archivo y lo envia ha todos lo usuarios conectados 
-					int lectura;
-					byte trozo_fichero[]=new byte[1024];
 					
-					System.out.println("Recibe archivo");
+					
+					int lectura,cont=0;
+					long long_archivo;
+					byte trozo_fichero[]=new byte[1024];
 					entrada_bytes_fichero = new BufferedInputStream(socket.getInputStream());
 					
+					
 					String nombreFichero = in.readUTF();
+					long_archivo=in.readLong();
 					System.out.println(nombreFichero);
+					System.out.println(long_archivo);
+					
+					
+					salida_bytes_fichero = new BufferedOutputStream(new FileOutputStream(ruta+nombreFichero));
+
 					
 
-					salida_bytes_fichero = new BufferedOutputStream(new FileOutputStream(ruta+nombreFichero));
-					
-					//Comenzamos a leer del cliente, cuando la lectura vale -1
-					while((lectura=entrada_bytes_fichero.read(trozo_fichero)) != -1){
-						System.out.println("Leerr!");
-						//guardamos el fichero en disco
-						salida_bytes_fichero.write(trozo_fichero, 0, lectura);
-						//Monstramos los bytes recibidos
-						System.out.println("Recibiendo fichero..."+ lectura+ " bytes");
-					}
 					
 					
 					
-					
-					
-					
-					
-					
-						//Mandamos a todos los usuarios el archivo recibido.
+					while ( cont!=long_archivo ) {			
+						lectura = entrada_bytes_fichero.read(trozo_fichero);
+						cont=cont+lectura;
 						
-						byte trozo_fichero1[]=new byte[8192];
-						int lectura1;
-						File f=new File(ruta+nombreFichero);
-						for(int i=0; i < usuariosSocket.size(); i++){
-							out.writeInt(300);
-							salida_bytes_fichero=new BufferedOutputStream(usuariosSocket.get(i).getOutputStream());
-							
-							entrada_bytes_fichero=new BufferedInputStream(new FileInputStream(f));
-							
-							out.writeUTF(f.getName());
-							//Bucle para enviar los bytes del fichero.
-							while((lectura1=entrada_bytes_fichero.read(trozo_fichero1)) != -1){
-								
-								//Mandamos  el trozo de fichero al servidor
-								salida_bytes_fichero.write(trozo_fichero1,0,lectura1);
-								//Monstramos los bytes enviados
-								System.out.println("Enviando fichero..." + lectura1+" bytes");
-							
-						}
+						System.out.println(cont);
+						// Guardamos el fichero en disco
+						salida_bytes_fichero.write(trozo_fichero, 0, lectura);
+						// Mostramos los bytes recibidos
+						System.out.println("Recibiendo fichero..." + lectura+" bytes");
 					}
+					
+					salida_bytes_fichero.close();
+					System.out.println("fin lectura");
+					
+					
+					
+					
+					
+					
+					//Mandamos a todos los usuarios el archivo recibido.
+					byte trozo_fichero1[]=new byte[8192];
+					int lectura1;
+					File f=new File(ruta+nombreFichero);
+					for(int i=0; i < usuariosSocket.size(); i++){
+						out.writeInt(300);
+						salida_bytes_fichero=new BufferedOutputStream(usuariosSocket.get(i).getOutputStream());
+						
+						entrada_bytes_fichero=new BufferedInputStream(new FileInputStream(f));
+						
+						out.writeUTF(f.getName());
+						out.writeLong(f.length());
+						//Bucle para enviar los bytes del fichero.
+						while((lectura1=entrada_bytes_fichero.read(trozo_fichero1)) != -1){
+							
+							//Mandamos  el trozo de fichero al servidor
+							out.write(trozo_fichero1,0,lectura1);
+							//Monstramos los bytes enviados
+							System.out.println("Enviando fichero..." + lectura1+" bytes");
+						
+					}
+					
+				}
+					
 					
 					break;
 				default:

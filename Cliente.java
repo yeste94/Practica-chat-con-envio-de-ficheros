@@ -57,12 +57,15 @@ public class Cliente implements Runnable{
         this.list=list;
         
        
-       //System.out.println(user);
+      
         try {
             cliente = new Socket(host,puerto);
             in = new DataInputStream(cliente.getInputStream());
             out = new DataOutputStream(cliente.getOutputStream());
             ois = new ObjectInputStream(cliente.getInputStream());
+            
+    		salida_bytes_fichero=new BufferedOutputStream(cliente.getOutputStream());
+
             
             out.writeUTF(nick);
             
@@ -108,20 +111,31 @@ public class Cliente implements Runnable{
 					entrada_bytes_fichero = new BufferedInputStream(cliente.getInputStream());
 					
 					String nombreFichero = in.readUTF();
+					long long_fichero=in.readLong();
 					System.out.println(nombreFichero);
 					
-					int lectura;
+					int lectura,cont=0;
+					
 					byte trozo_fichero[]=new byte[1024];
 					salida_bytes_fichero = new BufferedOutputStream(new FileOutputStream(ruta+"\\"+nombreFichero));
 					
-					//Comenzamos a leer del cliente, cuando la lectura vale -1
-					while((lectura=entrada_bytes_fichero.read(trozo_fichero)) != -1){
-						//guardamos el fichero en disco
+					
+					
+					while ( cont!=long_fichero ) {			
+						lectura = entrada_bytes_fichero.read(trozo_fichero);
+						cont=cont+lectura;
+						
+						System.out.println(cont);
+						// Guardamos el fichero en disco
 						salida_bytes_fichero.write(trozo_fichero, 0, lectura);
-						//Monstramos los bytes recibidos
-						System.out.println("Recibiendo fichero..."+ lectura+ " bytes");
+						// Mostramos los bytes recibidos
+						System.out.println("Recibiendo fichero..." + lectura+" bytes");
 					}
 					
+					salida_bytes_fichero.close();
+					System.out.println("fin lectura");
+					System.out.println("archivo recibido");
+					salida_bytes_fichero.close();
 					break;
 				default:
 					//System.out.println("No entra en ninguno");
@@ -139,25 +153,30 @@ public class Cliente implements Runnable{
     public void enviarArcivo(String ruta){
     	System.out.println(ruta);
     	try {
-			out.writeInt(200);
-			byte trozo_fichero[]=new byte[8192];
-			int lectura;
-			File f=new File(ruta);
-			salida_bytes_fichero=new BufferedOutputStream(cliente.getOutputStream());
-			entrada_bytes_fichero=new BufferedInputStream(new FileInputStream(f));
-			
-			
-			out.writeUTF(f.getName());
-			//Bucle para enviar los bytes del fichero.
-			
-			while((lectura=entrada_bytes_fichero.read(trozo_fichero)) != -1){
-				System.out.println("leer archivo");
-				//Mandamos  el trozo de fichero al servidor
-				System.out.println("mandar archivo");
-				salida_bytes_fichero.write(trozo_fichero,0,lectura);
-				//Monstramos los bytes enviados
-				System.out.println("Enviando fichero..." + lectura+" bytes");
-			}
+    		out.writeInt(200);
+    		int lectura;
+    		byte trozo_fichero[]=new byte[1024];
+    		File f=new File(ruta);
+    		
+    		entrada_bytes_fichero=new BufferedInputStream(new FileInputStream(f));
+    		
+    		out.writeUTF(f.getName());
+    		System.out.println(f.length());
+    		
+    		out.writeLong(f.length());
+    		
+    		while ((lectura=entrada_bytes_fichero.read(trozo_fichero)) != -1){
+    			
+    			// Mandamos el trozo de fichero al servidor
+    			//salida_bytes_fichero.write(trozo_fichero, 0, lectura);
+    			out.write(trozo_fichero, 0, lectura);
+    			// Mostramos los bytes enviados
+    			System.out.println("Enviando fichero..." + lectura+" bytes");
+    		}
+    		System.out.println("archivo enviado");
+    		
+    		
+    		
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -170,6 +189,7 @@ public class Cliente implements Runnable{
     public void enviarMsg(String msg){
     
         try {
+        	
         	out.writeInt(100);
             out.writeUTF(msg);
         } catch (IOException e) {
