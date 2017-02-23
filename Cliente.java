@@ -1,4 +1,5 @@
 
+import java.awt.Frame;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -52,12 +53,12 @@ public class Cliente implements Runnable{
    
     
     //Constructor recibe como parametro el panel donde se mostraran los mensajes
-    public Cliente(JEditorPane panel,JList list,String nick){
+    public Cliente(JEditorPane panel,JList list,String nick,FrameCliente frame){
         this.panel = panel;
         this.list=list;
-        
+        this.ruta=frame.getTxtRuta().getText();
        
-      
+      System.out.println(this.ruta);
         try {
             cliente = new Socket(host,puerto);
             in = new DataInputStream(cliente.getInputStream());
@@ -66,7 +67,7 @@ public class Cliente implements Runnable{
             
     		salida_bytes_fichero=new BufferedOutputStream(cliente.getOutputStream());
 
-            
+            System.out.println(nick);
             out.writeUTF(nick);
             
 
@@ -82,15 +83,14 @@ public class Cliente implements Runnable{
     @Override
     public void run() {
         try{
-            //Ciclo infinito que escucha por mensajes del servidor y los muestra en el panel
-            
-        	//System.out.println(HiloServidor.users.size());
- 
         	
+            //Ciclo infinito que escucha por mensajes del servidor y los muestra en el panel
+             
             while(true){
             	int pro=in.readInt();
+            	//Leemos para si se envia la lista de nick un mensaje o una imagen.
             	switch (pro) {
-				case LIST_NICK:
+				case LIST_NICK: //Cuando se evia el nick lo muestra en el JList.
 					DefaultListModel modelo = new DefaultListModel();
 					
 					usuarios= (ArrayList<String>) ois.readObject();
@@ -99,27 +99,25 @@ public class Cliente implements Runnable{
 					}
 					list.setModel(modelo);
 					break;
-				case ENV_MENSAJE:
+				case ENV_MENSAJE://Recibe el mensaje y lo muestra en pantall
 					System.out.println("Texto");
 					mensajes+=in.readUTF();
 					panel.setText(mensajes);
 					
 					break;
-				case RECI_ARCHIVO:
+				case RECI_ARCHIVO://Recibe el archivo y lo guarda en la ruta especificada.
 					
 					System.out.println("Recibe archivo");
 					entrada_bytes_fichero = new BufferedInputStream(cliente.getInputStream());
 					
 					String nombreFichero = in.readUTF();
 					long long_fichero=in.readLong();
-					System.out.println(nombreFichero);
-					
+					System.out.println("Nombre del fichero: "+nombreFichero);
+					System.out.println("longitud del archivo: "+long_fichero);
 					int lectura,cont=0;
 					
 					byte trozo_fichero[]=new byte[1024];
 					salida_bytes_fichero = new BufferedOutputStream(new FileOutputStream(ruta+"\\"+nombreFichero));
-					
-					
 					
 					while ( cont!=long_fichero ) {			
 						lectura = entrada_bytes_fichero.read(trozo_fichero);
@@ -149,8 +147,12 @@ public class Cliente implements Runnable{
             e.printStackTrace();
         }
     }
-    
+    /**
+     * Metodo para enviar archivo a todos los usuarios.
+     * @param ruta
+     */
     public void enviarArcivo(String ruta){
+    	
     	System.out.println(ruta);
     	try {
     		out.writeInt(200);
@@ -164,7 +166,7 @@ public class Cliente implements Runnable{
     		System.out.println(f.length());
     		
     		out.writeLong(f.length());
-    		
+    		out.writeUTF(" ");
     		while ((lectura=entrada_bytes_fichero.read(trozo_fichero)) != -1){
     			
     			// Mandamos el trozo de fichero al servidor
@@ -174,16 +176,47 @@ public class Cliente implements Runnable{
     			System.out.println("Enviando fichero..." + lectura+" bytes");
     		}
     		System.out.println("archivo enviado");
-    		
-    		
-    		
+    			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-    	
-    	
     }
-    
+    /**
+     * Metodo para enviar un archivo a un usuario con el nick especifico
+     * @param ruta
+     * @param nick
+     */
+    public void enviarArcivo(String ruta,String nick){
+    	System.out.println(ruta);
+    	System.out.println(nick);
+    	try {
+    		out.writeInt(200);
+    		int lectura;
+    		byte trozo_fichero[]=new byte[1024];
+    		File f=new File(ruta);
+    		
+    		entrada_bytes_fichero=new BufferedInputStream(new FileInputStream(f));
+    		//Enviamos el nombre del archivo
+    		out.writeUTF(f.getName());
+    		System.out.println(f.length());
+    		//Enviamos la longitud del archivo
+    		out.writeLong(f.length());
+    		
+    		out.writeUTF(nick);
+    		while ((lectura=entrada_bytes_fichero.read(trozo_fichero)) != -1){
+    			
+    			// Mandamos el trozo de fichero al servidor
+    			//salida_bytes_fichero.write(trozo_fichero, 0, lectura);
+    			out.write(trozo_fichero, 0, lectura);
+    			// Mostramos los bytes enviados
+    			System.out.println("Enviando fichero..." + lectura+" bytes");
+    		}
+    		System.out.println("archivo enviado");
+    			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    }    
     
     //Funcion sirve para enviar mensajes al servidor
     public void enviarMsg(String msg){

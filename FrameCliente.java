@@ -35,7 +35,7 @@ public class FrameCliente extends JFrame {
     private Cliente cliente;
 	private JTextField txtLocalhost;
 	private JTextField textField;
-	private JTextField textField_1;
+	private JTextField txtRuta;
 	private JLabel lblHost;
 	private JLabel lblPuerto;
 	private JLabel lblRuta;
@@ -103,8 +103,8 @@ public class FrameCliente extends JFrame {
         
         lblRuta = new JLabel("Ruta:");
         
-        textField_1 = new JTextField();
-        textField_1.setColumns(10);
+        txtRuta = new JTextField();
+        txtRuta.setColumns(10);
         
         btnConectar = new JButton("Conectar");
         btnConectar.setActionCommand("botonConectar");
@@ -124,6 +124,7 @@ public class FrameCliente extends JFrame {
 			public void valueChanged(ListSelectionEvent e) {
 				
 				
+				String selec=(String) list.getSelectedValue();
 				
 				System.out.println("Has seleccionado una elemento");
 				JFileChooser  fc=new JFileChooser ();
@@ -132,7 +133,7 @@ public class FrameCliente extends JFrame {
 				
 				File archivo = fc.getSelectedFile();
 				String rutaArchi=archivo.getAbsolutePath();
-				cliente.enviarArcivo(rutaArchi);				
+				cliente.enviarArcivo(rutaArchi,selec);				
 			}
 		});
         
@@ -163,7 +164,7 @@ public class FrameCliente extends JFrame {
         					.addPreferredGap(ComponentPlacement.UNRELATED)
         					.addComponent(lblRuta)
         					.addPreferredGap(ComponentPlacement.UNRELATED)
-        					.addComponent(textField_1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+        					.addComponent(txtRuta, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
         					.addGap(26)
         					.addComponent(btnConectar))
         				.addGroup(layout.createSequentialGroup()
@@ -194,7 +195,7 @@ public class FrameCliente extends JFrame {
         				.addComponent(textField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
         				.addComponent(btnConectar)
         				.addComponent(lblRuta)
-        				.addComponent(textField_1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+        				.addComponent(txtRuta, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
         			.addGap(18)
         			.addGroup(layout.createParallelGroup(Alignment.LEADING)
         				.addComponent(jScrollPane1, GroupLayout.PREFERRED_SIZE, 400, GroupLayout.PREFERRED_SIZE)
@@ -229,7 +230,7 @@ public class FrameCliente extends JFrame {
     	if(evt.getActionCommand().equals("botonConectar")){
     		
     		this.setNick(JOptionPane.showInputDialog("Dame tu nick"));
-    		cliente= new Cliente(peMsg,list,this.nick);
+    		cliente= new Cliente(peMsg,list,this.nick,this);
     		
             
             Thread hilo = new Thread(cliente);
@@ -299,8 +300,6 @@ public class FrameCliente extends JFrame {
 	public void setCliente(Cliente cliente) {
 		this.cliente = cliente;
 	}
-
-
 	public JTextField getTxtLocalhost() {
 		return txtLocalhost;
 	}
@@ -313,11 +312,11 @@ public class FrameCliente extends JFrame {
 	public void setTextField(JTextField textField) {
 		this.textField = textField;
 	}
-	public JTextField getTextField_1() {
-		return textField_1;
+	public JTextField getTxtRuta() {
+		return txtRuta;
 	}
-	public void setTextField_1(JTextField textField_1) {
-		this.textField_1 = textField_1;
+	public void setTxtRuta(JTextField textField_1) {
+		this.txtRuta = textField_1;
 	}
 	public JLabel getLblHost() {
 		return lblHost;
@@ -349,4 +348,23 @@ public class FrameCliente extends JFrame {
 	public void setNick(String nick) {
 		this.nick = nick;
 	}
+	public String getUsers() {
+		return users;
+	}
+	public void setUsers(String users) {
+		this.users = users;
+	}
+	public JList getList() {
+		return list;
+	}
+	public void setList(JList list) {
+		this.list = list;
+	}
+	public JButton getBtnEnviarArchivo() {
+		return btnEnviarArchivo;
+	}
+	public void setBtnEnviarArchivo(JButton btnEnviarArchivo) {
+		this.btnEnviarArchivo = btnEnviarArchivo;
+	}
+	
 }
